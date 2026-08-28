@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1f8a70">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="家庭账本">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/favicon.png">
+<link rel="stylesheet" href="css/style.css">
+<title>家庭账本</title>
+</head>
+<body>
+
+<!-- 设置密码 -->
+<div id="setpw-screen" class="screen-full">
+  <div class="card center-card">
+    <h2>设置登录密码</h2>
+    <p class="hint">首次使用，请设置一个密码</p>
+    <input id="setpw-password" type="password" placeholder="输入密码" autocomplete="off">
+    <input id="setpw-confirm" type="password" placeholder="再次输入密码" autocomplete="off">
+    <p id="setpw-error" class="error"></p>
+    <button id="setpw-btn" class="btn primary">确定</button>
+  </div>
+</div>
+
+<!-- 登录 -->
+<div id="login-screen" class="screen-full hidden">
+  <div class="card center-card">
+    <h2>家庭账本</h2>
+    <p class="hint">请输入登录密码</p>
+    <input id="login-password" type="password" placeholder="密码" autocomplete="off">
+    <p id="login-error" class="error"></p>
+    <button id="login-btn" class="btn primary">登录</button>
+  </div>
+</div>
+
+<!-- 主应用 -->
+<div id="app" class="hidden">
+  <header class="app-header">
+    <div class="title">家庭账本</div>
+    <button id="btn-settings" class="icon-btn" aria-label="设置">⚙</button>
+  </header>
+
+  <section class="balance-card">
+    <div class="balance-label">当前结余</div>
+    <div id="balance-value" class="balance-value">¥0.00</div>
+    <div id="balance-month" class="balance-sub"></div>
+  </section>
+
+  <main class="content">
+    <!-- 记一笔 -->
+    <section id="screen-record" class="screen active">
+      <div class="tabs">
+        <button class="tab active" data-tab="tab-salary">记工资</button>
+        <button class="tab" data-tab="tab-expense">记支出</button>
+        <button class="tab" data-tab="tab-correct">矫正余额</button>
+      </div>
+
+      <div id="tab-salary" class="tab-pane active">
+        <label>月份<input id="salary-month" type="month"></label>
+        <label>丈夫工资<input id="salary-husband" type="number" inputmode="decimal" placeholder="0"></label>
+        <label>妻子工资<input id="salary-wife" type="number" inputmode="decimal" placeholder="0"></label>
+        <button id="salary-save" class="btn primary">保存工资</button>
+      </div>
+
+      <div id="tab-expense" class="tab-pane">
+        <label>日期<input id="expense-date" type="date"></label>
+        <label>用途
+          <select id="expense-category"></select>
+        </label>
+        <label>金额<input id="expense-amount" type="number" inputmode="decimal" placeholder="0"></label>
+        <label>备注<input id="expense-remark" type="text" placeholder="选填，如：超市采购"></label>
+        <button id="expense-save" class="btn primary">保存支出</button>
+      </div>
+
+      <div id="tab-correct" class="tab-pane">
+        <p class="hint">账本余额与真实余额不一致时，用此功能矫正，差额自动记为「小额花销」。</p>
+        <label>账本当前余额<input id="correct-current" type="text" disabled></label>
+        <label>真实余额<input id="correct-real" type="number" inputmode="decimal" placeholder="实际卡里剩下的钱"></label>
+        <p id="correct-diff" class="diff"></p>
+        <button id="correct-save" class="btn primary">矫正</button>
+      </div>
+    </section>
+
+    <!-- 明细 -->
+    <section id="screen-history" class="screen">
+      <label class="inline-label">月份
+        <select id="history-month"></select>
+      </label>
+      <div id="history-list" class="list"></div>
+    </section>
+
+    <!-- 汇总 -->
+    <section id="screen-summary" class="screen">
+      <label class="inline-label">月份
+        <select id="summary-month"></select>
+      </label>
+      <div class="summary-stats">
+        <div><span>收入</span><b id="summary-income" class="pos">¥0.00</b></div>
+        <div><span>支出</span><b id="summary-expense" class="neg">¥0.00</b></div>
+        <div><span>净结余</span><b id="summary-net">¥0.00</b></div>
+      </div>
+      <canvas id="summary-pie" width="280" height="280"></canvas>
+      <div id="summary-legend" class="legend"></div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <button id="nav-record" class="nav-btn active">📝 记一笔</button>
+    <button id="nav-history" class="nav-btn">📋 明细</button>
+    <button id="nav-summary" class="nav-btn">📊 汇总</button>
+  </nav>
+</div>
+
+<!-- 设置弹层 -->
+<div id="settings-modal" class="modal hidden">
+  <div class="modal-box">
+    <h3>设置</h3>
+    <div class="sub">修改密码</div>
+    <input id="cp-old" type="password" placeholder="原密码">
+    <input id="cp-new" type="password" placeholder="新密码">
+    <input id="cp-confirm" type="password" placeholder="确认新密码">
+    <p id="cp-msg" class="error"></p>
+    <button id="cp-save" class="btn primary">保存密码</button>
+    <hr>
+    <button id="btn-export" class="btn">导出备份</button>
+    <button id="btn-import" class="btn">导入备份</button>
+    <input id="import-file" type="file" accept="application/json" class="hidden">
+    <hr>
+    <button id="btn-logout" class="btn danger">退出登录</button>
+    <button id="btn-close-settings" class="btn ghost">关闭</button>
+  </div>
+</div>
+
+<!-- 编辑记录弹层 -->
+<div id="edit-modal" class="modal hidden">
+  <div class="modal-box">
+    <h3>编辑记录</h3>
+    <div id="edit-body"></div>
+    <button id="edit-save" class="btn primary">保存</button>
+    <button id="edit-cancel" class="btn ghost">取消</button>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
