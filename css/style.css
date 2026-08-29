@@ -11,6 +11,16 @@ body{
 }
 .hidden{display:none !important;}
 
+/* 免密登录开关 */
+.switch-row{display:flex; align-items:center; justify-content:space-between; gap:12px; margin:6px 0 2px;}
+.switch-row > span:first-child{font-size:14px; color:var(--text);}
+.switch{position:relative; display:inline-block; width:48px; height:28px; flex-shrink:0;}
+.switch input{opacity:0; width:0; height:0; position:absolute;}
+.slider{position:absolute; cursor:pointer; inset:0; background:#cdd3da; border-radius:28px; transition:.2s;}
+.slider:before{content:""; position:absolute; height:22px; width:22px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:.2s; box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.switch input:checked + .slider{background:var(--teal);}
+.switch input:checked + .slider:before{transform:translateX(20px);}
+
 /* 全屏登录/设置密码 */
 .screen-full{
   min-height:100vh; display:flex; align-items:center; justify-content:center;

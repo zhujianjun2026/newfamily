@@ -126,6 +126,12 @@
     <input id="cp-confirm" type="password" placeholder="确认新密码">
     <p id="cp-msg" class="error"></p>
     <button id="cp-save" class="btn primary">保存密码</button>
+    <div class="sub">登录设置</div>
+    <label class="switch-row">
+      <span>验证后免密登录</span>
+      <span class="switch"><input type="checkbox" id="auto-login-toggle"><span class="slider"></span></span>
+    </label>
+    <p class="hint">开启后，首次验证密码即记住登录状态，下次打开免输密码（可随时退出或关闭）。</p>
     <hr>
     <button id="btn-export" class="btn">导出备份</button>
     <button id="btn-import" class="btn">导入备份</button>

@@ -37,9 +37,25 @@
   function mk(type, extra) {
     return Object.assign({ id: Date.now() + '_' + Math.random().toString(36).slice(2, 7), type: type, ts: new Date().toISOString() }, extra);
   }
+  // ---------- 免密登录：独立存储，不混入账本数据 ----------
+  const FL_AUTO = 'fl_auto_login';
+  const FL_SES = 'fl_session';
+  function getAuto() { return localStorage.getItem(FL_AUTO) === '1'; }
+  function setAuto(v) { localStorage.setItem(FL_AUTO, v ? '1' : '0'); }
+  function isAuthed() { return localStorage.getItem(FL_SES) === '1'; }
+  function setAuthed(v) { localStorage.setItem(FL_SES, v ? '1' : ''); }
+
   async function sha256(text) {
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    if (crypto && crypto.subtle && crypto.subtle.digest) {
+      try {
+        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+      } catch (e) {}
+    }
+    // 非安全上下文(如局域网 http)降级，保证功能可用
+    let h = 0x811c9dc5;
+    for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+    return ('00000000' + (h >>> 0).toString(16)).slice(-8);
   }
 
   // ---------- 数据计算 ----------
@@ -241,8 +257,9 @@
     show('record');
   }
   async function init() {
-    if (!data.password_hash) { showScreen('setpw-screen'); }
-    else { showScreen('login-screen'); }
+    if (!data.password_hash) { showScreen('setpw-screen'); return; }
+    if (getAuto() && isAuthed()) { enterApp(); return; }
+    showScreen('login-screen');
   }
 
   // ---------- 事件绑定 ----------
@@ -254,13 +271,18 @@
       if (p !== c) { $('setpw-error').textContent = '两次输入不一致'; return; }
       data.password_hash = await sha256(p);
       save();
+      setAuthed(getAuto());
       $('setpw-error').textContent = '';
       enterApp();
     });
     // 登录
     const doLogin = async () => {
       const p = $('login-password').value;
-      if (await sha256(p) === data.password_hash) { $('login-error').textContent = ''; enterApp(); }
+      if (await sha256(p) === data.password_hash) {
+        $('login-error').textContent = '';
+        if (getAuto()) setAuthed(true);
+        enterApp();
+      }
       else { $('login-error').textContent = '密码错误'; }
     };
     $('login-btn').addEventListener('click', doLogin);
@@ -341,9 +363,19 @@
     $('edit-cancel').addEventListener('click', () => $('edit-modal').classList.add('hidden'));
 
     // 设置
-    $('btn-settings').addEventListener('click', () => $('settings-modal').classList.remove('hidden'));
+    $('btn-settings').addEventListener('click', () => {
+      $('auto-login-toggle').checked = getAuto();
+      $('settings-modal').classList.remove('hidden');
+    });
     $('btn-close-settings').addEventListener('click', () => $('settings-modal').classList.add('hidden'));
-    $('btn-logout').addEventListener('click', () => { $('settings-modal').classList.add('hidden'); showScreen('login-screen'); $('login-password').value = ''; });
+    $('btn-logout').addEventListener('click', () => { setAuthed(false); $('settings-modal').classList.add('hidden'); showScreen('login-screen'); $('login-password').value = ''; });
+    // 免密登录开关
+    $('auto-login-toggle').addEventListener('change', () => {
+      const on = $('auto-login-toggle').checked;
+      setAuto(on);
+      if (on) { setAuthed(true); alert('已开启免密登录，下次打开将直接进入'); }
+      else { setAuthed(false); alert('已关闭免密登录，下次需重新输入密码'); }
+    });
     $('cp-save').addEventListener('click', async () => {
       const old = $('cp-old').value, nw = $('cp-new').value, cf = $('cp-confirm').value;
       if (await sha256(old) !== data.password_hash) { $('cp-msg').textContent = '原密码错误'; return; }
